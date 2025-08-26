@@ -5,8 +5,8 @@ const os = require("os");
 /* GET users listing. 
 router.get('/marhba', function(req, res, next) {
   res.json('welcome');
-});*/ 
-const osController = require ("../Controllers/osContoller")
+});*/
+const osController = require("../Controllers/osController")
 // GET OS Information
-router.get('/getOsInformation', osController.getOsInformation) ;
+router.get('/getOsInformation', osController.getOsInformation);
 module.exports = router;
