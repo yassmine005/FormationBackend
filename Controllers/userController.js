@@ -1,48 +1,42 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-const http = require("http");
+const User = require("../models/userModel");
 
-require("dotenv").config();
-const { connectToMongoDb } = require("./config/db");
+// Enregistrement simple
+exports.registerUser = async (req, res) => {
+  try {
+    const {name, email, password, role, phone, address } = req.body;
+    // Création directe de l'utilisateur (mot de passe non hashé)
+    const user = await User.create({ name, email, password, role, phone, address });
+    res.status(201).json({ message: "User registered", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-// Import routes
-var indexRouter = require("./routes/userRoutes"); // utilisateur
-var osRouter = require("./routes/osRoutes"); // infos système
+// Login simple
+exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-// Création instance express
-var app = express();
+    // Comparaison simple du mot de passe
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
+    res.json({ message: "Login successful", user }); // retourne l'objet utilisateur
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-// Routes
-app.use("/api/users", indexRouter);
-app.use("/api/os", osRouter);
-
-// catch 404
-app.use(function (req, res, next) {
-  next(createError(404));
-});
-
-// error handler
-app.use(function (err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-  res.status(err.status || 500);
-  res.json({ error: err.message });
-});
-
-// Démarrage serveur
-const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
-
-server.listen(PORT, () => {
-  connectToMongoDb();
-  console.log("🚀 Server running on port", PORT);
-});
+// Mise à jour du profil
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedUser = await User.findByIdAndUpdate(id, req.body, { new: true });
+    res.json({ message: "Profile updated", updatedUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
