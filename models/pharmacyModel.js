@@ -6,6 +6,6 @@ const pharmacySchema = new mongoose.Schema({
   phone: String,
   openingHours: String,
   regionId: { type: mongoose.Schema.Types.ObjectId, ref: "Region" }
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model("Pharmacy", pharmacySchema);
