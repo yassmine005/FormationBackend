@@ -1,48 +1,65 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const mongoose = require("mongoose");
+require('dotenv').config();
 
-const http =require("http")
+// Connexion à la base de données
+const { connectToMongoDb } = require('./config/db');
 
-require("dotenv").config()
-const{connectToMongoDb} = require('./config/db');
+// Import des routers
+const indexRouter = require('./routes/index');
+const userRouter = require('./routes/userRouter');
+const osRouter = require('./routes/osRouter');
+const deliveryRouter = require('./routes/deliveryRouter');
+const medicationRouter = require('./routes/medicationRouter');
+const notificationRouter = require('./routes/notificationRouter');
+const orderRouter = require('./routes/orderRouter');
+const stockRouter = require('./routes/stockRouter');
+const pharmacyRouter = require('./routes/pharmacyRouter');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const app = express();
 
-var app = express();
-
-
-app.use(logger('dev')); //bech t5raje al chaque requete detail el koul
+// Middlewares
+app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));//dossier public
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);// kifech tousel li index router 
-app.use('/users', usersRouter);//kifech tousel el userrouter
+// Définition des routes
+app.use('/', indexRouter);
+app.use('/users', userRouter);
+app.use('/os', osRouter);
+app.use('/order', orderRouter);
+app.use('/stock', stockRouter);
+app.use('/pharmacy', pharmacyRouter);
+app.use('/medication', medicationRouter);
+app.use('/notification', notificationRouter);
+app.use('/delivery', deliveryRouter);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Gestion des erreurs 404
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// Gestionnaire global d'erreurs
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({ error: err.message });
+});
 
-  // render the error page
-  res.status(err.status || 500);
-  res.json('error');
-});// ken serveur ta7 
-
-;
-const server = http.createServer(app)
-server.listen(process.env.Port,()=>{
-  connectToMongoDb();
-   console.log("app is running on Port", process.env.Port);
+// Connexion DB et lancement serveur
+const PORT = process.env.PORT || 5002;
+connectToMongoDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Erreur de connexion à la DB:', err);
   });
+
+module.exports = app;
